@@ -1,5 +1,63 @@
 <?php
+// Exit if accessed directly
+if ( !defined( 'ABSPATH' ) ) exit;
 
+// BEGIN ENQUEUE PARENT ACTION
+// AUTO GENERATED - Do not modify or remove comment markers above or below:
+
+if ( !function_exists( 'chld_thm_cfg_locale_css' ) ):
+    function chld_thm_cfg_locale_css( $uri ){
+        if ( empty( $uri ) && is_rtl() && file_exists( get_template_directory() . '/rtl.css' ) )
+            $uri = get_template_directory_uri() . '/rtl.css';
+        return $uri;
+    }
+endif;
+add_filter( 'locale_stylesheet_uri', 'chld_thm_cfg_locale_css' );
+         
+if ( !function_exists( 'child_theme_configurator_css' ) ):
+    function child_theme_configurator_css() {
+        wp_enqueue_style( 'chld_thm_cfg_child', trailingslashit( get_stylesheet_directory_uri() ) . 'style.css', array( 'hello-elementor','hello-elementor','hello-elementor-theme-style','hello-elementor-header-footer' ) );
+    }
+endif;
+add_action( 'wp_enqueue_scripts', 'child_theme_configurator_css', 10 );
+
+// END ENQUEUE PARENT ACTION
+
+//     تغییر فونت پیشخوان وردپرس     //
+function change_admin_font() {
+    echo '<style type="text/css">@font-face{font-family:"esfont";src:url("' . get_stylesheet_directory_uri() . '/font/esfont.ttf")}#wpwrap,#wpadminbar .ab-empty-item,#wpadminbar a.ab-item,#wpadminbar>#wp-toolbar span.ab-label,#wpadminbar>#wp-toolbar span.noticon,.rtl h1,.rtl h2,.rtl h3,.rtl h4,.rtl h5,.rtl h6,.media-toolbar-secondary,.media-frame.mode-grid .media-toolbar select,.details,.media-modal label{font-family:"esfont"}</style>';
+}
+add_action('admin_head', 'change_admin_font');
+
+///// حذف پیشخوان برای کاربران غیر رمدیر /////
+// هدایت کاربران غیر مدیر به صفحه اصلی سایت
+function redirect_non_admin_users() {
+    if (!current_user_can('administrator') && is_admin()) {
+        wp_redirect(home_url());
+        exit;
+    }
+}
+add_action('admin_init', 'redirect_non_admin_users');
+
+// مخفی کردن نوار مدیریتی برای کاربران غیر مدیر
+function hide_admin_bar_for_non_admin_users() {
+    if (!current_user_can('administrator')) {
+        show_admin_bar(false);
+    }
+}
+add_action('after_setup_theme', 'hide_admin_bar_for_non_admin_users');
+///////***************/////////////***********///////////////****************///////////////////*****************///////////////
+///////***************/////////////***********///////////////****************///////////////////*****************///////////////
+///////***************/////////////***********///////////////****************///////////////////*****************///////////////
+///////***************/////////////***********///////////////****************///////////////////*****************///////////////
+///////***************/////////////***********///////////////****************///////////////////*****************///////////////
+///////***************/////////////***********///////////////****************///////////////////*****************///////////////
+//
+//
+//
+//
+//
+//
 ///////***************/////////////***********///////////////****************///////////////////*****************///////////////
 ///////***************/////////////***********///////////////****************///////////////////*****************///////////////
 ///////***************/////////////***********///////////////****************///////////////////*****************///////////////
@@ -7,7 +65,8 @@
 ///////***************/////////////***********///////////////****************///////////////////*****************///////////////
 ///////***************/////////////***********///////////////****************///////////////////*****************///////////////
 ///////***************/////////////***********///////////////****************///////////////////*****************///////////////
-// سایر کدهای موجود در فایل
+
+// بخش فرم ثبت درخواست
 
 // ایجاد شورت کد برای فرم
 function display_custom_message_form_unique() {
@@ -79,20 +138,7 @@ function display_custom_message_form_unique() {
         </div>
 
         <div class="form-group">
-            <h3>دسته‌بندی پیام</h3>
-            <select name="message_category" id="message_category" required>
-                <option value="">لطفا یک دسته‌بندی را انتخاب کنید</option>';
-
-    foreach ($categories as $category) {
-        $output .= sprintf(
-            '<option value="%s">%s</option>',
-            esc_attr($category->slug),
-            esc_html($category->name)
-        );
-    }
-
-    $output .= '
-            </select>
+            <h3>دسته‌بندی پیام</h</select>
         </div>
 
         <div class="form-group">
@@ -373,7 +419,7 @@ function display_custom_message_form_unique() {
             });
 
             // فیلتر کاربران بر اساس گروه انتخابی
-            $("input[name=\"user_role\"]").change(function() {
+            $("input[name=\'user_role\']").change(function() {
                 var selectedRole = $(this).val();
                 $("#selected_user option").hide();
                 $("#selected_user option[data-role*=\"" + selectedRole + "\"]").show();
@@ -432,94 +478,12 @@ function display_custom_message_form_unique() {
 }
 add_shortcode('myform', 'display_custom_message_form_unique');
 
-// متد AJAX برای پردازش پیام
-if (!function_exists('handle_message_submission_unique')) {
-    function handle_message_submission_unique() {
-        // بررسی nonce برای امنیت
-        check_ajax_referer('send_message_nonce', 'message_nonce');
 
-        // بررسی ورودی‌ها
-        $sender_id = get_current_user_id();
-        $receiver_id = isset($_POST['selected_user']) ? intval($_POST['selected_user']) : 0;
-        $message_title = isset($_POST['message_title']) ? sanitize_text_field($_POST['message_title']) : '';
-        $message_category = isset($_POST['message_category']) ? sanitize_text_field($_POST['message_category']) : '';
-        $message = isset($_POST['message']) ? wp_kses_post($_POST['message']) : '';
-
-        if (empty($sender_id) || empty($receiver_id) || empty($message_title) || empty($message_category) || empty($message)) {
-            wp_send_json_error('همه فیلدها باید پر شوند.');
-        }
-
-        // ایجاد پست جدید برای پیام
-        $post_id = wp_insert_post(array(
-            'post_title' => $message_title,
-            'post_content' => $message,
-            'post_status' => 'publish',
-            'post_type' => 'messages',
-            'meta_input' => array(
-                'receiver_id' => $receiver_id,
-                'sender_id' => $sender_id,
-                'message_category' => $message_category
-            )
-        ));
-
-        if (is_wp_error($post_id)) {
-            wp_send_json_error('خطا در ذخیره پیام.');
-        }
-
-        // پردازش پیوست‌ها
-        if (!empty($_FILES['attachments']['name'][0])) {
-            $files = $_FILES['attachments'];
-            $attachment_ids = array();
-
-            // محدود کردن تعداد فایل‌ها به 3
-            if (count($files['name']) > 3) {
-                wp_send_json_error('شما فقط می‌توانید 3 فایل انتخاب کنید.');
-            }
-
-            foreach ($files['name'] as $key => $value) {
-                if ($files['size'][$key] > 20 * 1024 * 1024) {
-                    wp_send_json_error('حجم فایل ' . $value . ' بزرگتر از 20 مگابایت است.');
-                }
-
-                $file = array(
-                    'name' => $files['name'][$key],
-                    'type' => $files['type'][$key],
-                    'tmp_name' => $files['tmp_name'][$key],
-                    'error' => $files['error'][$key],
-                    'size' => $files['size'][$key]
-                );
-
-                $_FILES['attachment'] = $file;
-                $attachment_id = media_handle_upload('attachment', $post_id);
-
-                if (is_wp_error($attachment_id)) {
-                    wp_send_json_error($attachment_id->get_error_message());
-                }
-
-                $attachment_ids[] = $attachment_id;
-            }
-
-            // به‌روزرسانی پیوست‌ها در متای پست
-            if (!empty($attachment_ids)) {
-                update_post_meta($post_id, 'attachments', $attachment_ids);
-            }
-        }
-
-        // پاسخ موفقیت‌آمیز
-        wp_send_json_success('پیام با موفقیت ارسال شد');
-    }
-    add_action('wp_ajax_handle_message_submission_unique', 'handle_message_submission_unique');
-    add_action('wp_ajax_nopriv_handle_message_submission_unique', 'handle_message_submission_unique');
-}
-
-
-
-
-/////////////////////************/////////////////******************//////////////////
-/////////////////////************/////////////////******************//////////////////
-/////////////////////************پست تایپ سفارشی******************//////////////////
-/////////////////////************/////////////////******************//////////////////
-/////////////////////************/////////////////******************//////////////////
+//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2
+//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2
+//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2
+//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2
+//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2//PART2
 // ایجاد پست تایپ سفارشی برای پیام‌ها
 function create_custom_post_type_messages() {
     $labels = array(
@@ -603,10 +567,6 @@ function customize_user_capabilities() {
 }
 add_action('init', 'customize_user_capabilities');
 
-
-//////////////////////////////////////////////////////////////////////////////
-////////////بخش پیام های ارسالی /////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
 // ایجاد شورت‌کد برای نمایش پیام‌های ارسال‌شده
 add_shortcode('sent_messages', 'display_sent_messages_shortcode');
 
@@ -949,45 +909,42 @@ function load_sent_messages() {
         wp_send_json_success('');
     }
 }
-
-
-
-///////////////////////////////////////
-//////////// بخش پیام های دریافتی //////////////
-///////////////////////////////////////
+//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3
+//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3
+//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3
+//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3//PART3
 // ایجاد شورت‌کد برای نمایش پیام‌های دریافتی
 add_shortcode('received_messages', 'display_received_messages_shortcode');
 
 function display_received_messages_shortcode($user_id = null) {
-if (!is_user_logged_in()) {
-return 'لطفا برای مشاهده پیام‌های دریافتی وارد شوید.';
-}
+    if (!is_user_logged_in()) {
+        return 'لطفا برای مشاهده پیام‌های دریافتی وارد شوید.';
+    }
 
-$is_admin = current_user_can('administrator');
-$current_user_id = get_current_user_id();
+    $is_admin = current_user_can('administrator');
+    $current_user_id = get_current_user_id();
 
-if ($is_admin && $user_id !== null) {
-$user_id = intval($user_id);
-} else {
-$user_id = $current_user_id;
-}
+    if ($is_admin && $user_id !== null) {
+        $user_id = intval($user_id);
+    } else {
+        $user_id = $current_user_id;
+    }
 
-$output = '<div id="message-list" class="received-messages-container">';
+    $output = '<div id="message-list" class="received-messages-container">';
 
     if ($is_admin) {
-    $users = get_users(array('orderby' => 'display_name'));
-    $output .= '<select id="user-select" class="user-select">
-        <option value="">انتخاب کاربر برای مشاهده پیام‌ها</option>';
+        $users = get_users(array('orderby' => 'display_name'));
+        $output .= '<select id="user-select" class="user-select">
+            <option value="">انتخاب کاربر برای مشاهده پیام‌ها</option>';
         foreach ($users as $user) {
-        $output .= sprintf(
-        '<option value="%d">%s (%s)</option>',
-        $user->ID,
-        esc_html($user->display_name),
-        esc_html($user->user_email)
-        );
+            $output .= sprintf(
+                '<option value="%d">%s (%s)</option>',
+                $user->ID,
+                esc_html($user->display_name),
+                esc_html($user->user_email)
+            );
         }
-        $output .= '
-    </select>';
+        $output .= '</select>';
     }
 
     $output .= '<input type="text" id="message-search" class="message-search" placeholder="جستجو بر اساس شناسه پیام...">
@@ -1006,240 +963,240 @@ $output = '<div id="message-list" class="received-messages-container">';
     <div class="loading-message">در حال بارگذاری...</div>
 </div>';
 
-// اضافه کردن استایل‌ها و اسکریپت‌ها
-$output .= '<style>
-    .received-messages-container {
-        width: 100%;
-        margin: 20px 0;
-        overflow-x: auto;
-    }
-
-    .user-select {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 20px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 14px;
-    }
-
-    .message-search {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 20px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 14px;
-    }
-
-    .received-messages-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: #fff;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .received-messages-table th {
-        background: #f8f9fa;
-        padding: 15px;
-        text-align: right;
-        font-size: 18px;
-        font-weight: bold;
-        border-bottom: 2px solid #dee2e6;
-    }
-
-    .received-messages-table td {
-        padding: 12px;
-        border-bottom: 1px solid #dee2e6;
-        vertical-align: top;
-    }
-
-    .sender-name {
-        font-size: 16px;
-        font-weight: bold;
-        color: #333;
-    }
-
-    .group-name {
-        font-size: 14px;
-        color: #777;
-    }
-
-    .message-content {
-        font-size: 15px;
-        line-height: 1.5;
-        color: #444;
-    }
-
-    .show-more-btn {
-        display: inline-block;
-        padding: 8px 15px;
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        color: #0073aa;
-        cursor: pointer;
-        font-size: 14px;
-        transition: all 0.3s ease;
-    }
-
-    .show-more-btn:hover {
-        background: #e9ecef;
-        border-color: #0073aa;
-        color: #005177;
-    }
-
-    .show-attachments-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 8px 15px;
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        color: #0073aa;
-        cursor: pointer;
-        font-size: 15px;
-        transition: all 0.3s ease;
-    }
-
-    .show-attachments-btn:hover {
-        background: #e9ecef;
-        border-color: #0073aa;
-        color: #005177;
-    }
-
-    .show-attachments-btn .fas {
-        font-size: 20px;
-    }
-
-    .no-attachment {
-        color: #666;
-        font-style: italic;
-        font-size: 15px;
-    }
-
-    .date-cell {
-        font-size: 15px;
-        color: #666;
-    }
-
-    .message-id {
-        font-size: 15px;
-        color: #666;
-    }
-
-    .no-messages {
-        font-size: 16px;
-        color: #666;
-        text-align: center;
-        margin-top: 20px;
-    }
-
-    .loading-message {
-        display: none;
-        text-align: center;
-        font-size: 16px;
-        color: #0073aa;
-        padding: 20px;
-    }
-
-    .read-message {
-        background: #e9ecef;
-    }
-</style>';
-
-$output .= '<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>';
-$output .= '<script>
-    jQuery(document).ready(function($) {
-        var page = 1;
-        var loading = false;
-        var hasMore = true;
-
-        function loadMessages() {
-            if (loading || !hasMore) return;
-            loading = true;
-            $(".loading-message").show();
-
-            $.ajax({
-                url: "' . admin_url('admin-ajax.php') . '",
-                type: "POST",
-                data: {
-                    action: "load_received_messages",
-                    page: page,
-                    user_id: $("#user-select").val() || ' . $user_id . '
-                },
-                success: function(response) {
-                    if (response.success) {
-                        $(".received-messages-table tbody").append(response.data);
-                        if (response.data.trim() === "") {
-                            hasMore = false;
-                        }
-                        page++;
-                    } else {
-                        hasMore = false;
-                    }
-                    $(".loading-message").hide();
-                    loading = false;
-                }
-            });
+    // اضافه کردن استایل‌ها و اسکریپت‌ها
+    $output .= '<style>
+        .received-messages-container {
+            width: 100%;
+            margin: 20px 0;
+            overflow-x: auto;
         }
 
-        // بارگذاری پیام‌ها در ابتدا
-        loadMessages();
+        .user-select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
 
-        // بارگذاری پیام‌ها با اسکرول
-        $(window).scroll(function() {
-            if ($(window).scrollTop() + $(window).height() > $(document).height() - 100) {
-                loadMessages();
-            }
-        });
+        .message-search {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
 
-        // عملکرد دکمه ادامه پیام
-        $(document).on("click", ".show-more-btn", function() {
-            var $row = $(this).closest("tr");
-            $(this).siblings(".continue-reading").toggle();
-            $(this).text($(this).text() === "ادامه پیام" ? "بستن" : "ادامه پیام");
-            $.ajax({
-                url: "' . admin_url('admin-ajax.php') . '",
-                type: "POST",
-                data: {
-                    action: "mark_message_as_read",
-                    message_id: $row.find(".message-id").text()
-                },
-                success: function(response) {
-                    if (response.success) {
-                        $row.addClass("read-message");
+        .received-messages-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .received-messages-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: right;
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .received-messages-table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: top;
+        }
+
+        .sender-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .group-name {
+            font-size: 14px;
+            color: #777;
+        }
+
+        .message-content {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #444;
+        }
+
+        .show-more-btn {
+            display: inline-block;
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            color: #0073aa;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .show-more-btn:hover {
+            background: #e9ecef;
+            border-color: #0073aa;
+            color: #005177;
+        }
+
+        .show-attachments-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            color: #0073aa;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .show-attachments-btn:hover {
+            background: #e9ecef;
+            border-color: #0073aa;
+            color: #005177;
+        }
+
+        .show-attachments-btn .fas {
+            font-size: 20px;
+        }
+
+        .no-attachment {
+            color: #666;
+            font-style: italic;
+            font-size: 15px;
+        }
+
+        .date-cell {
+            font-size: 15px;
+            color: #666;
+        }
+
+        .message-id {
+            font-size: 15px;
+            color: #666;
+        }
+
+        .no-messages {
+            font-size: 16px;
+            color: #666;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading-message {
+            display: none;
+            text-align: center;
+            font-size: 16px;
+            color: #0073aa;
+            padding: 20px;
+        }
+
+        .read-message {
+            background: #e9ecef;
+        }
+    </style>';
+
+    $output .= '<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>';
+    $output .= '<script>
+        jQuery(document).ready(function($) {
+            var page = 1;
+            var loading = false;
+            var hasMore = true;
+
+            function loadMessages() {
+                if (loading || !hasMore) return;
+                loading = true;
+                $(".loading-message").show();
+
+                $.ajax({
+                    url: "' . admin_url('admin-ajax.php') . '",
+                    type: "POST",
+                    data: {
+                        action: "load_received_messages",
+                        page: page,
+                        user_id: $("#user-select").val() || ' . $user_id . '
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $(".received-messages-table tbody").append(response.data);
+                            if (response.data.trim() === "") {
+                                hasMore = false;
+                            }
+                            page++;
+                        } else {
+                            hasMore = false;
+                        }
+                        $(".loading-message").hide();
+                        loading = false;
                     }
+                });
+            }
+
+            // بارگذاری پیام‌ها در ابتدا
+            loadMessages();
+
+            // بارگذاری پیام‌ها با اسکرول
+            $(window).scroll(function() {
+                if ($(window).scrollTop() + $(window).height() > $(document).height() - 100) {
+                    loadMessages();
                 }
             });
-        });
 
-        // عملکرد دکمه نمایش پیوست
-        $(document).on("click", ".show-attachments-btn", function() {
-            var url = $(this).data("url");
-            window.open(url, "_blank");
-        });
+            // عملکرد دکمه ادامه پیام
+            $(document).on("click", ".show-more-btn", function() {
+                var $row = $(this).closest("tr");
+                $(this).siblings(".continue-reading").toggle();
+                $(this).text($(this).text() === "ادامه پیام" ? "بستن" : "ادامه پیام");
+                $.ajax({
+                    url: "' . admin_url('admin-ajax.php') . '",
+                    type: "POST",
+                    data: {
+                        action: "mark_message_as_read",
+                        message_id: $row.find(".message-id").text()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $row.addClass("read-message");
+                        }
+                    }
+                });
+            });
 
-        // جستجو بر اساس شناسه پیام
-        $("#message-search").on("keyup", function() {
-            var value = $(this).val().toLowerCase();
-            $(".received-messages-table tbody tr").filter(function() {
-                $(this).toggle($(this).find(".message-id").text().toLowerCase().indexOf(value) > -1);
+            // عملکرد دکمه نمایش پیوست
+            $(document).on("click", ".show-attachments-btn", function() {
+                var url = $(this).data("url");
+                window.open(url, "_blank");
+            });
+
+            // جستجو بر اساس شناسه پیام
+            $("#message-search").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $(".received-messages-table tbody tr").filter(function() {
+                    $(this).toggle($(this).find(".message-id").text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            // تغییر کاربر انتخاب شده برای مشاهده پیام‌ها
+            $("#user-select").on("change", function() {
+                page = 1;
+                hasMore = true;
+                $(".received-messages-table tbody").empty();
+                loadMessages();
             });
         });
+    </script>';
 
-        // تغییر کاربر انتخاب شده برای مشاهده پیام‌ها
-        $("#user-select").on("change", function() {
-            page = 1;
-            hasMore = true;
-            $(".received-messages-table tbody").empty();
-            loadMessages();
-        });
-    });
-</script>';
-
-return $output;
+    return $output;
 }
 
 // هندل کردن بارگذاری پیام‌های دریافتی
@@ -1247,241 +1204,106 @@ add_action('wp_ajax_load_received_messages', 'load_received_messages');
 add_action('wp_ajax_nopriv_load_received_messages', 'load_received_messages');
 
 function load_received_messages() {
+    if (!is_user_logged_in()) {
+        wp_send_json_error('دسترسی غیرمجاز');
+    }
+    $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : get_current_user_id();
+    $page = isset($_POST['page']) ? intval($_POST['page']) : 1;
+    $args = array(
+        'post_type' => 'messages',
+        'meta_query' => array(
+            array(
+                'key' => 'recipient_id',
+                'value' => $user_id,
+                'compare' => '='
+            )
+        ),
+        'posts_per_page' => 10,
+        'paged' => $page,
+        'orderby' => 'date',
+        'order' => 'DESC'
+    );
 
+    $messages = new WP_Query($args);
 
+    if ($messages->have_posts()) {
+        ob_start();
+        while ($messages->have_posts()) {
+            $messages->the_post();
+            $sender_id = get_the_author_meta('ID');
+            $sender = get_userdata($sender_id);
+            $attachments = get_post_meta(get_the_ID(), 'attachments', true);
+            $post_date = human_time_diff(get_the_time('U'), current_time('timestamp')) . ' قبل';
+            $post_time = get_the_time('H:i');
+            $group_name = implode(', ', $sender->roles);
+            $read_class = get_post_meta(get_the_ID(), 'message_read', true) ? 'read-message' : '';
 
+            echo '<tr class="' . $read_class . '">
+                <td class="sender-name">
+                    ' . get_avatar($sender_id, 32) . '<br>
+                    ' . esc_html($sender->display_name) . '<br>
+                    <span class="group-name">' . esc_html($group_name) . '</span>
+                </td>
+                <td class="message-content">
+                    ' . wp_trim_words(get_the_content(), 20) . '
+                    <div class="continue-reading" style="display: none;">
+                        ' . wp_kses_post(get_the_content()) . '
+                    </div>
+                    <button class="show-more-btn">ادامه پیام</button>
+                </td>
+                <td class="attachments-cell">';
 
-if (!is_user_logged_in()) {
-wp_send_json_error('دسترسی غیرمجاز');
-}
-$user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : get_current_user_id();
-$page = isset($_POST['page']) ? intval($_POST['page']) : 1;
-$args = array(
-'post_type' => 'messages',
-'meta_query' => array(
-array(
-'key' => 'recipient_id',
-'value' => $user_id,
-'compare' => '='
-)
-),
-'posts_per_page' => 10,
-'paged' => $page,
-'orderby' => 'date',
-'order' => 'DESC'
-);
+            if (!empty($attachments)) {
+                foreach ($attachments as $attachment) {
+                    $file_type = wp_check_filetype($attachment['url']);
+                    $icon_class = 'fas fa-file';
+                    if ($file_type['ext'] === 'pdf') {
+                        $icon_class = 'fas fa-file-pdf';
+                    } elseif (in_array($file_type['ext'], array('jpg', 'jpeg', 'png', 'gif'))) {
+                        $icon_class = 'fas fa-file-image';
+                    }
 
-$messages = new WP_Query($args);
+                    echo '<button class="show-attachments-btn" data-url="' . esc_url($attachment['url']) . '">
+                        <i class="' . $icon_class . '"></i>
+                        نمایش پیوست
+                    </button>';
+                }
+            } else {
+                echo '<div class="no-attachment">این پیام پیوست ندارد</div>';
+            }
 
-if ($messages->have_posts()) {
-ob_start();
-while ($messages->have_posts()) {
-$messages->the_post();
-$sender_id = get_the_author_meta('ID');
-$sender = get_userdata($sender_id);
-$attachments = get_post_meta(get_the_ID(), 'attachments', true);
-$post_date = human_time_diff(get_the_time('U'), current_time('timestamp')) . ' قبل';
-$post_time = get_the_time('H:i');
-$group_name = implode(', ', $sender->roles);
-$read_class = get_post_meta(get_the_ID(), 'message_read', true) ? 'read-message' : '';
-
-echo '<tr class="' . $read_class . '">
-    <td class="sender-name">
-        ' . get_avatar($sender_id, 32) . '<br>
-        ' . esc_html($sender->display_name) . '<br>
-        <span class="group-name">' . esc_html($group_name) . '</span>
-    </td>
-    <td class="message-content">
-        ' . wp_trim_words(get_the_content(), 20) . '
-        <div class="continue-reading" style="display: none;">
-            ' . wp_kses_post(get_the_content()) . '
-        </div>
-        <button class="show-more-btn">ادامه پیام</button>
-    </td>
-    <td class="attachments-cell">';
-
-        if (!empty($attachments)) {
-        foreach ($attachments as $attachment) {
-        $file_type = wp_check_filetype($attachment['url']);
-        $icon_class = 'fas fa-file';
-        if ($file_type['ext'] === 'pdf') {
-        $icon_class = 'fas fa-file-pdf';
-        } elseif (in_array($file_type['ext'], array('jpg', 'jpeg', 'png', 'gif'))) {
-        $icon_class = 'fas fa-file-image';
+            echo '</td>
+                <td class="date-cell">ساعت: ' . $post_time . '<br>زمان: ' . $post_date . '</td>
+                <td class="message-id">' . get_the_ID() . '</td>
+            </tr>';
         }
-
-        echo '<button class="show-attachments-btn" data-url="' . esc_url($attachment['url']) . '">
-            <i class="' . $icon_class . '"></i>
-            نمایش پیوست
-        </button>';
-        }
-        } else {
-        echo '<div class="no-attachment">این پیام پیوست ندارد</div>';
-        }
-
-        echo '</td>
-    <td class="date-cell">ساعت: ' . $post_time . '<br>زمان: ' . $post_date . '</td>
-    <td class="message-id">' . get_the_ID() . '</td>
-</tr>';
-}
-wp_send_json_success(ob_get_clean());
-} else {
-wp_send_json_success('');
-}
+        wp_send_json_success(ob_get_clean());
+    } else {
+        wp_send_json_success('');
+    }
 }
 
 // هندل کردن علامت‌گذاری پیام به عنوان خوانده شده
 add_action('wp_ajax_mark_message_as_read', 'mark_message_as_read');
 
 function mark_message_as_read() {
-if (!is_user_logged_in()) {
-wp_send_json_error('دسترسی غیرمجاز');
-}
-
-$message_id = isset($_POST['message_id']) ? intval($_POST['message_id']) : 0;
-if ($message_id) {
-update_post_meta($message_id, 'message_read', true);
-wp_send_json_success();
-} else {
-wp_send_json_error('شناسه پیام نامعتبر است');
-}
-}
-
-
-/////////////////////////////////////////////////////
-//////////////////////////////////////////////////
-////////////////////////////////////////////////////
-// ایجاد طبقه‌بندی سفارشی برای گروه‌های کاربری
-function create_user_groups_taxonomy() {
-    register_taxonomy(
-        'user_groups',
-        'user',
-        array(
-            'label' => __( 'گروه‌های کاربری' ),
-            'public' => true,
-            'rewrite' => array( 'slug' => 'user-groups' ),
-            'hierarchical' => true,
-        )
-    );
-}
-add_action( 'init', 'create_user_groups_taxonomy' );
-
-// افزودن گروه‌های کاربری به پروفایل کاربر
-function add_user_groups_to_profile( $user ) {
-    ?>
-    <h3><?php _e('گروه‌های کاربری'); ?></h3>
-    <table class="form-table">
-        <tr>
-            <th><label for="user_groups"><?php _e('گروه‌های کاربری'); ?></label></th>
-            <td>
-                <?php
-                $user_groups = get_terms( array(
-                    'taxonomy' => 'user_groups',
-                    'hide_empty' => false,
-                ));
-                foreach ( $user_groups as $group ) {
-                    echo '<label><input type="checkbox" name="user_groups[]" value="' . esc_attr( $group->term_id ) . '"' . checked( has_term( $group->term_id, 'user_groups', $user->ID ), true, false ) . '> ' . esc_html( $group->name ) . '</label><br>';
-                }
-                ?>
-            </td>
-        </tr>
-    </table>
-    <?php
-}
-add_action( 'show_user_profile', 'add_user_groups_to_profile' );
-add_action( 'edit_user_profile', 'add_user_groups_to_profile' );
-
-// ذخیره گروه‌های کاربری برای کاربر
-function save_user_groups( $user_id ) {
-    if ( !current_user_can( 'edit_user', $user_id ) ) {
-        return false;
+    if (!is_user_logged_in()) {
+        wp_send_json_error('دسترسی غیرمجاز');
     }
 
-    $user_groups = isset( $_POST['user_groups'] ) ? array_map( 'intval', $_POST['user_groups'] ) : array();
-    wp_set_object_terms( $user_id, $user_groups, 'user_groups', false );
-}
-add_action( 'personal_options_update', 'save_user_groups' );
-add_action( 'edit_user_profile_update', 'save_user_groups' );
-
-
-
-
-/////////////////////////////////////////////////////
-//////////////////////////////////////////////////
-////////////////////////////////////////////////////
-// افزودن منوی مشترک برای تنظیمات سامانه
-function system_settings_admin_menu() {
-    // منوی اصلی تنظیمات سامانه
-    add_menu_page(
-        'تنظیمات سامانه',  // عنوان صفحه
-        'تنظیمات سامانه',  // نام منو
-        'manage_options',   // قابلیت دسترسی
-        'system-settings',  // اسلاگ منو
-        'system_settings_page', // تابع نمایش صفحه
-        'dashicons-admin-settings', // آیکون منو
-        6                       // موقعیت منو
-    );
-
-    // زیرمنوی گروه‌های کاربری
-    add_submenu_page(
-        'system-settings',       // اسلاگ منوی اصلی
-        'گروه‌های کاربری',       // عنوان صفحه
-        'گروه‌های کاربری',       // نام منو
-        'manage_options',        // قابلیت دسترسی
-        'user-groups',           // اسلاگ زیرمنو
-        'user_groups_page'       // تابع نمایش صفحه
-    );
-
-    // زیرمنوی عضویت کاربران در گروه‌ها
-    add_submenu_page(
-        'system-settings',       // اسلاگ منوی اصلی
-        'عضویت کاربران در گروه‌ها',  // عنوان صفحه
-        'عضویت کاربران در گروه‌ها',  // نام منو
-        'manage_options',        // قابلیت دسترسی
-        'user-group-membership', // اسلاگ زیرمنو
-        'user_group_membership_page' // تابع نمایش صفحه
-    );
-
-    // زیرمنوی نمایش کاربران به تفکیک گروه
-    add_submenu_page(
-        'system-settings',       // اسلاگ منوی اصلی
-        'نمایش کاربران به تفکیک گروه',  // عنوان صفحه
-        'نمایش کاربران به تفکیک گروه',  // نام منو
-        'manage_options',        // قابلیت دسترسی
-        'user-group-view', // اسلاگ زیرمنو
-        'user_group_view_page' // تابع نمایش صفحه
-    );
-}
-add_action('admin_menu', 'system_settings_admin_menu');
-
-// تابع نمایش صفحه تنظیمات سامانه
-function system_settings_page() {
-    echo '<h1>تنظیمات سامانه</h1>';
-    echo '<p>از منوی کناری برای مدیریت گروه‌های کاربری و عضویت کاربران استفاده کنید.</p>';
-}
-
-// تابع نمایش صفحه مدیریت گروه‌های کاربری
-function user_groups_page() {
-    if (isset($_POST['add_group'])) {
-        $group_name = sanitize_text_field($_POST['group_name']);
-        if (!empty($group_name)) {
-            wp_insert_term($group_name, 'user_groups');
-        }
+    $message_id = isset($_POST['message_id']) ? intval($_POST['message_id']) : 0;
+    if ($message_id) {
+        update_post_meta($message_id, 'message_read', true);
+        wp_send_json_success();
+    } else {
+        wp_send_json_error('شناسه پیام نامعتبر است');
     }
-
-    if (isset($_GET['delete'])) {
-        $term_id = intval($_GET['delete']);
-        wp_delete_term($term_id, 'user_groups');
-    }
-
-    if (isset($_POST['edit_group'])) {
-        $term_id = intval($_POST['term_id']);
-        $group_name = sanitize_text_field($_POST['group_name']);
-        if (!empty($group_name)) {
-            wp_update_term($term_id, 'user_groups', array('name' => $group_name));
-        }
-    }
-
+}
+//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4
+//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4
+//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4
+//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4//PART4
+<?php
     $user_groups = get_terms(array('taxonomy' => 'user_groups', 'hide_empty' => false));
     ?>
     <div class="wrap">
@@ -1640,18 +1462,10 @@ function user_group_view_page() {
     </div>
     <?php
 }
-
-
-
-
-///////***************/////////////***********///////////////****************///////////////////*****************///////////////
-///////***************/////////////***********///////////////****************///////////////////*****************///////////////
-///////***************/////////////***********///////////////****************///////////////////*****************///////////////
-///////***************/////////////***********  پست تایپ پیام ها  پست تایپ پیام ها  پست تایپ پیام ها  پست تایپ پیام ها  پست تایپ پیام ها  *************
-///////***************/////////////***********///////////////****************///////////////////*****************///////////////
-///////***************/////////////***********///////////////****************///////////////////*****************///////////////
-///////***************/////////////***********///////////////****************///////////////////*****************///////////////
-
+//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5
+//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5
+//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5
+//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5//PART5
 // سایر کدهای موجود در فایل functions.php
 
 // ایجاد جداول سفارشی برای ذخیره پیام‌ها
@@ -2014,10 +1828,10 @@ if (!function_exists('display_custom_message_form_unique')) {
                 });
 
                 // فیلتر کاربران بر اساس گروه انتخابی
-                $("input[name=\'user_role\']").change(function() {
+                $("input[name='user_role']").change(function() {
                     var selectedRole = $(this).val();
                     $("#selected_user option").hide();
-                    $("#selected_user option[data-role*=\"" + selectedRole + "\"]").show();
+                    $("#selected_user option[data-role*='" + selectedRole + "']").show();
                     $("#selected_user").val("");
                     $("#user-search").val("");
                 });
@@ -2170,4 +1984,420 @@ if (!function_exists('handle_message_submission_unique')) {
     }
     add_action('wp_ajax_handle_message_submission_unique', 'handle_message_submission_unique');
     add_action('wp_ajax_nopriv_handle_message_submission_unique', 'handle_message_submission_unique');
+}
+//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6
+//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6
+//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6
+//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6//PART6
+<?php
+// به‌روزرسانی پیوست‌ها در جداول پیام‌ها
+$attachments_serialized = maybe_serialize($attachment_ids);
+
+$wpdb->update(
+    $wpdb->prefix . 'sent_messages',
+    array('attachments' => $attachments_serialized),
+    array('id' => $message_id)
+);
+
+$wpdb->update(
+    $wpdb->prefix . 'received_messages',
+    array('attachments' => $attachments_serialized),
+    array('id' => $message_id)
+);
+
+// پاسخ موفقیت‌آمیز
+wp_send_json_success('پیام با موفقیت ارسال شد');
+}
+add_action('wp_ajax_handle_message_submission_unique', 'handle_message_submission_unique');
+add_action('wp_ajax_nopriv_handle_message_submission_unique', 'handle_message_submission_unique');
+//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7
+//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7
+//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7
+//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7
+// ایجاد دسته‌بندی برای پیام‌ها
+function create_message_categories_taxonomy() {
+    $labels = array(
+        'name' => 'دسته‌بندی پیام‌ها',
+        'singular_name' => 'دسته‌بندی پیام',
+        'search_items' => 'جستجوی دسته‌بندی‌ها',
+        'all_items' => 'همه دسته‌بندی‌ها',
+        'parent_item' => 'دسته‌بندی والد',
+        'parent_item_colon' => 'دسته‌بندی والد:',
+        'edit_item' => 'ویرایش دسته‌بندی',
+        'update_item' => 'به‌روزرسانی دسته‌بندی',
+        'add_new_item' => 'افزودن دسته‌بندی جدید',
+        'new_item_name' => 'نام دسته‌بندی جدید',
+        'menu_name' => 'دسته‌بندی‌ها',
+    );
+
+    $args = array(
+        'hierarchical' => true,
+        'labels' => $labels,
+        'show_ui' => true,
+        'show_admin_column' => true,
+        'query_var' => true,
+        'rewrite' => array('slug' => 'message-category'),
+    );
+
+    register_taxonomy('message_categories', array('messages'), $args);
+}
+add_action('init', 'create_message_categories_taxonomy', 0);
+
+// تغییر سطح دسترسی برای ارسال پیام برای همه کاربران
+function customize_user_capabilities() {
+    $roles = array('administrator', 'editor', 'author', 'contributor', 'subscriber');
+    
+    foreach ($roles as $role_name) {
+        $role = get_role($role_name);
+        if ($role) {
+            $role->add_cap('publish_messages');
+            $role->add_cap('edit_messages');
+            $role->add_cap('delete_messages');
+            $role->add_cap('read_messages');
+        }
+    }
+}
+add_action('init', 'customize_user_capabilities');
+
+// ایجاد شورت‌کد برای نمایش پیام‌های ارسال‌شده
+add_shortcode('sent_messages', 'display_sent_messages_shortcode');
+
+function display_sent_messages_shortcode($user_id = null) {
+    if (!is_user_logged_in()) {
+        return 'لطفا برای مشاهده پیام‌های ارسال‌شده وارد شوید.';
+    }
+
+    $is_admin = current_user_can('administrator');
+    $current_user_id = get_current_user_id();
+
+    if ($is_admin && $user_id !== null) {
+        $user_id = intval($user_id);
+    } else {
+        $user_id = $current_user_id;
+    }
+
+    $output = '<div id="message-list" class="sent-messages-container">';
+
+    if ($is_admin) {
+        $users = get_users(array('orderby' => 'display_name'));
+        $output .= '<select id="user-select" class="user-select">
+            <option value="">انتخاب کاربر برای مشاهده پیام‌ها</option>';
+        foreach ($users as $user) {
+            $output .= sprintf(
+                '<option value="%d">%s (%s)</option>',
+                $user->ID,
+                esc_html($user->display_name),
+                esc_html($user->user_email)
+            );
+        }
+        $output .= '</select>';
+    }
+
+    $output .= '<input type="text" id="message-search" class="message-search" placeholder="جستجو بر اساس شناسه پیام...">
+    <table class="sent-messages-table">
+        <thead>
+            <tr>
+                <th class="column-recipient" style="width: 15%;">نام گیرنده</th>
+                <th class="column-message" style="width: 50%;">شرح پیام</th>
+                <th class="column-attachments" style="width: 15%;">اسناد پیوستی</th>
+                <th class="column-date" style="width: 15%;">زمان ارسال</th>
+                <th class="column-id" style="width: 5%;">شناسه</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <div class="loading-message">در حال بارگذاری...</div>
+</div>';
+
+    // اضافه کردن استایل‌ها و اسکریپت‌ها
+    $output .= '<style>
+        .sent-messages-container {
+            width: 100%;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .user-select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .message-search {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .sent-messages-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sent-messages-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: right;
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .sent-messages-table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: top;
+        }
+
+        .recipient-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .group-name {
+            font-size: 14px;
+            color: #777;
+        }
+
+        .message-content {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #444;
+        }
+
+        .show-more-btn {
+            display: inline-block;
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            color: #0073aa;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .show-more-btn:hover {
+            background: #e9ecef;
+            border-color: #0073aa;
+            color: #005177;
+        }
+
+        .show-attachments-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            color: #0073aa;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .show-attachments-btn:hover {
+            background: #e9ecef;
+            border-color: #0073aa;
+            color: #005177;
+        }
+
+        .show-attachments-btn .fas {
+            font-size: 20px;
+        }
+
+        .no-attachment {
+            color: #666;
+            font-style: italic;
+            font-size: 15px;
+        }
+
+        .date-cell {
+            font-size: 15px;
+            color: #666;
+        }
+
+        .message-id {
+            font-size: 15px;
+            color: #666;
+        }
+
+        .no-messages {
+            font-size: 16px;
+            color: #666;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading-message {
+            display: none;
+            text-align: center;
+            font-size: 16px;
+            color: #0073aa;
+            padding: 20px;
+        }
+    </style>';
+
+    $output .= '<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>';
+    $output .= '<script>
+        jQuery(document).ready(function($) {
+            var page = 1;
+            var loading = false;
+            var hasMore = true;
+
+            function loadMessages() {
+                if (loading || !hasMore) return;
+                loading = true;
+                $(".loading-message").show();
+
+                $.ajax({
+                    url: "' . admin_url('admin-ajax.php') . '",
+                    type: "POST",
+                    data: {
+                        action: "load_sent_messages",
+                        page: page,
+                        user_id: $("#user-select").val() || ' . $user_id . '
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $(".sent-messages-table tbody").append(response.data);
+                            if (response.data.trim() === "") {
+                                hasMore = false;
+                            }
+                            page++;
+                        } else {
+                            hasMore = false;
+                        }
+                        $(".loading-message").hide();
+                        loading = false;
+                    }
+                });
+            }
+
+            // بارگذاری پیام‌ها در ابتدا
+            loadMessages();
+
+            // بارگذاری پیام‌ها با اسکرول
+            $(window).scroll(function() {
+                if ($(window).scrollTop() + $(window).height() > $(document).height() - 100) {
+                    loadMessages();
+                }
+            });
+
+            // عملکرد دکمه ادامه پیام
+            $(document).on("click", ".show-more-btn", function() {
+                var $row = $(this).closest("tr");
+                $(this).siblings(".continue-reading").toggle();
+                $(this).text($(this).text() === "ادامه پیام" ? "بستن" : "ادامه پیام");
+            });
+
+            // عملکرد دکمه نمایش پیوست
+            $(document).on("click", ".show-attachments-btn", function() {
+                var url = $(this).data("url");
+                window.open(url, "_blank");
+            });
+
+            // جستجو بر اساس شناسه پیام
+            $("#message-search").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $(".sent-messages-table tbody tr").filter(function() {
+                    $(this).toggle($(this).find(".message-id").text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            // تغییر کاربر انتخاب شده برای مشاهده پیام‌ها
+            $("#user-select").on("change", function() {
+                page = 1;
+                hasMore = true;
+                $(".sent-messages-table tbody").empty();
+                loadMessages();
+            });
+        });
+    </script>';
+
+    return $output;
+}
+
+// هندل کردن بارگذاری پیام‌های ارسال‌شده
+add_action('wp_ajax_load_sent_messages', 'load_sent_messages');
+add_action('wp_ajax_nopriv_load_sent_messages', 'load_sent_messages');
+
+function load_sent_messages() {
+    if (!is_user_logged_in()) {
+        wp_send_json_error('دسترسی غیرمجاز');
+    }
+
+    $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : get_current_user_id();
+    $page = isset($_POST['page']) ? intval($_POST['page']) : 1;
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'sent_messages';
+    $messages = $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM $table_name WHERE sender_id = %d ORDER BY created_at DESC LIMIT %d, 10",
+        $user_id,
+        ($page - 1) * 10
+    ));
+
+    if ($messages) {
+        ob_start();
+        foreach ($messages as $message) {
+            $recipient = get_userdata($message->receiver_id);
+            $attachments = maybe_unserialize($message->attachments);
+            $post_date = human_time_diff(strtotime($message->created_at), current_time('timestamp')) . ' قبل';
+            $post_time = date('H:i', strtotime($message->created_at));
+            $group_name = $recipient ? implode(', ', $recipient->roles) : 'بدون گروه';
+
+            echo '<tr>
+                <td class="recipient-name">
+                    ' . get_avatar($message->receiver_id, 32) . '<br>
+                    ' . esc_html($recipient->display_name) . '<br>
+                    <span class="group-name">' . esc_html($group_name) . '</span>
+                </td>
+                <td class="message-content">
+                    ' . wp_trim_words($message->message, 20) . '
+                    <div class="continue-reading" style="display: none;">
+                        ' . wp_kses_post($message->message) . '
+                    </div>
+                    <button class="show-more-btn">ادامه پیام</button>
+                </td>
+                <td class="attachments-cell">';
+
+            if (!empty($attachments)) {
+                foreach ($attachments as $attachment_id) {
+                    $attachment_url = wp_get_attachment_url($attachment_id);
+                    $file_type = wp_check_filetype($attachment_url);
+                    $icon_class = 'fas fa-file';
+                    if ($file_type['ext'] === 'pdf') {
+                        $icon_class = 'fas fa-file-pdf';
+                    } elseif (in_array($file_type['ext'], array('jpg', 'jpeg', 'png', 'gif'))) {
+                        $icon_class = 'fas fa-file-image';
+                    }
+
+                    echo '<button class="show-attachments-btn" data-url="' . esc_url($attachment_url) . '">
+                        <i class="' . $icon_class . '"></i>
+                        نمایش پیوست
+                    </button>';
+                }
+            } else {
+                echo '<div class="no-attachment">این پیام پیوست ندارد</div>';
+            }
+
+            echo '</td>
+                <td class="date-cell">ساعت: ' . $post_time . '<br>زمان: ' . $post_date . '</td>
+                <td class="message-id">' . $message->id . '</td>
+            </tr>';
+        }
+        wp_send_json_success(ob_get_clean());
+    } else {
+        wp_send_json_success('');
+    }
 }
