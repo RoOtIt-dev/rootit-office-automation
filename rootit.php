@@ -2014,22 +2014,6 @@ add_action('wp_ajax_nopriv_handle_message_submission_unique', 'handle_message_su
 //PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7
 //PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7
 //PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7
-// تغییر سطح دسترسی برای ارسال پیام برای همه کاربران
-function customize_user_capabilities() {
-    $roles = array('administrator', 'editor', 'author', 'contributor', 'subscriber');
-    
-    foreach ($roles as $role_name) {
-        $role = get_role($role_name);
-        if ($role) {
-            $role->add_cap('publish_messages');
-            $role->add_cap('edit_messages');
-            $role->add_cap('delete_messages');
-            $role->add_cap('read_messages');
-        }
-    }
-}
-add_action('init', 'customize_user_capabilities');
-
 // ایجاد شورت‌کد برای نمایش پیام‌های ارسال‌شده
 add_shortcode('sent_messages', 'display_sent_messages_shortcode');
 
