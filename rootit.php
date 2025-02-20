@@ -2014,35 +2014,6 @@ add_action('wp_ajax_nopriv_handle_message_submission_unique', 'handle_message_su
 //PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7
 //PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7
 //PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7//PART7
-// ایجاد دسته‌بندی برای پیام‌ها
-function create_message_categories_taxonomy() {
-    $labels = array(
-        'name' => 'دسته‌بندی پیام‌ها',
-        'singular_name' => 'دسته‌بندی پیام',
-        'search_items' => 'جستجوی دسته‌بندی‌ها',
-        'all_items' => 'همه دسته‌بندی‌ها',
-        'parent_item' => 'دسته‌بندی والد',
-        'parent_item_colon' => 'دسته‌بندی والد:',
-        'edit_item' => 'ویرایش دسته‌بندی',
-        'update_item' => 'به‌روزرسانی دسته‌بندی',
-        'add_new_item' => 'افزودن دسته‌بندی جدید',
-        'new_item_name' => 'نام دسته‌بندی جدید',
-        'menu_name' => 'دسته‌بندی‌ها',
-    );
-
-    $args = array(
-        'hierarchical' => true,
-        'labels' => $labels,
-        'show_ui' => true,
-        'show_admin_column' => true,
-        'query_var' => true,
-        'rewrite' => array('slug' => 'message-category'),
-    );
-
-    register_taxonomy('message_categories', array('messages'), $args);
-}
-add_action('init', 'create_message_categories_taxonomy', 0);
-
 // تغییر سطح دسترسی برای ارسال پیام برای همه کاربران
 function customize_user_capabilities() {
     $roles = array('administrator', 'editor', 'author', 'contributor', 'subscriber');
